@@ -1,0 +1,63 @@
+# ============================================================================
+# Loop General Dashboard — .gitignore
+# ============================================================================
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Node/npm (caso aggiungiamo build tool in futuro)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+
+# Deno
+.deno/
+
+# Variabili d'ambiente — NON committare MAI segreti
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# File di output buildl (se in futuro aggiungiamo bundler)
+dist/
+build/
+out/
+
+# Log
+*.log
+logs/
+
+# Backup automatici
+*.bak
+*.backup
+*.orig
+
+# Chiavi e credenziali (paranoia)
+*.pem
+*.key
+*-service-account*.json
+firebase-credentials*.json
+supabase-service-role*.txt
+
+# Cartella test/locali
+.scratch/
+.tmp/
+tmp/
+
+# Archivi
+*.zip
+*.tar.gz
+*.tgz
+
+# Generated files
+*.tsbuildinfo
