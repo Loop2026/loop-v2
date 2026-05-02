@@ -332,8 +332,9 @@ select.fil option{background:var(--navy2)}
     <div class="pg" id="pg-pf">
       <div class="pg-h"><div class="pg-t">Performance & Proiezioni</div><div class="pg-s">Andamento mensile e proiezione a termine servizio</div></div>
       <!-- ADMIN ONLY: pannello per impostare il numero di cicli mese stimati per abbonamento.
-           Visibile solo se USER_ROLE === 'admin'. Popolato da renderAdminCicliPanel() -->
-      <div id="adm-pf-cicli" style="display:none;margin-bottom:18px;padding:14px 18px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.3);border-radius:12px"></div>
+           Visibile solo se USER_ROLE === 'admin'. Popolato da renderAdminCicliPanel().
+           Palette in linea con app: blu primario su fondo scuro neutro. -->
+      <div id="adm-pf-cicli" style="display:none;margin-bottom:18px;padding:14px 18px;background:rgba(255,255,255,.03);border:1px solid rgba(37,99,235,.3);border-radius:12px"></div>
       <div class="pgrid">
         <div class="ch-c"><div class="ct" style="margin-bottom:16px"><span data-ico="trend" data-ico-size="18"></span> Profitto cumulato</div><canvas id="chcum" height="200"></canvas></div>
         <div class="ch-c"><div class="ct" style="margin-bottom:16px"><span data-ico="bar" data-ico-size="18"></span> Cicli per mese</div><canvas id="chcic" height="200"></canvas></div>
@@ -4276,8 +4277,12 @@ let chCic = null;
 // ----------------------------------------------------------------------------
 // Solo per USER_ROLE === 'admin'. Mostra una riga per ogni abbonamento del
 // cliente in vista (CURRENT_CLIENT_PROFILE.abbonamenti) con un input numerico
-// per cicli_mese e un pulsante Salva. Su save fa PUT /abbonamenti/:id e poi
-// refreshFromApi() per ricalcolare grafici e tabella proiezione.
+// per cicli_mese e un pulsante Salva. Su save:
+//   1) PUT /abbonamenti/:id { cicli_mese }
+//   2) ri-fetch abbonamenti freschi dal DB
+//   3) ricostruisce CU via dashboardV2 (stesso pattern di switchAbbonamento)
+//   4) re-render initCC → grafici chcum/chcic + tabella pjtb + pannello stesso
+// Colori in linea con la palette app (--blue / blue-xl), niente viola.
 // ============================================================================
 function renderAdminCicliPanel() {
   const box = document.getElementById('adm-pf-cicli');
@@ -4302,20 +4307,20 @@ function renderAdminCicliPanel() {
     rowsHtml += ''
       + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)">'
       +   '<div style="flex:1;min-width:200px;font-size:13px;color:#E2E8F0">'
-      +     '<span style="background:rgba(168,85,247,.18);color:#C4B5FD;border:1px solid rgba(168,85,247,.35);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;margin-right:8px">A' + ord + '</span>'
+      +     '<span style="background:rgba(37,99,235,.15);color:var(--blue-xl);border:1px solid rgba(37,99,235,.3);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;margin-right:8px">A' + ord + '</span>'
       +     escAttr(piano) + alias
       +   '</div>'
       +   '<div style="display:flex;align-items:center;gap:8px">'
       +     '<label style="font-size:11.5px;color:var(--gray)">Cicli/mese stimati</label>'
       +     '<input type="number" id="adm-cic-' + escAttr(a.id) + '" min="1" max="30" value="' + valStr + '" '
-      +       'style="width:70px;padding:6px 8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;font-family:inherit;text-align:center;font-size:13px">'
-      +     '<button class="btn-s" style="padding:6px 14px;font-size:12px" onclick="saveAdmCicli(\'' + escAttr(a.id) + '\')">Salva &amp; ricalcola</button>'
+      +       'style="width:70px;padding:6px 8px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;font-family:inherit;text-align:center;font-size:13px">'
+      +     '<button class="btn-a" style="padding:6px 14px;font-size:12px" onclick="saveAdmCicli(\'' + escAttr(a.id) + '\')">Salva &amp; ricalcola</button>'
       +   '</div>'
       + '</div>';
   });
 
   box.innerHTML = ''
-    + '<div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#C4B5FD;margin-bottom:6px">'
+    + '<div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--blue-xl);margin-bottom:6px">'
     +   '<span>🛠️</span>'
     +   '<span>Admin · Cicli mese stimati per abbonamento</span>'
     + '</div>'
@@ -4343,10 +4348,35 @@ async function saveAdmCicli(abbId) {
   if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio…'; }
   try {
     await api.updateAbbonamento(abbId, { cicli_mese: n });
-    // Refresh completo: ricarica abbonamenti, ricostruisce CU e ricomputa grafici/tabella.
-    await refreshFromApi();
-    // Re-render pannello con il valore aggiornato.
-    renderAdminCicliPanel();
+
+    // 1) Ri-fetch abbonamenti freschi dal DB (refreshFromApi NON tocca CURRENT_CLIENT_PROFILE)
+    if (CURRENT_CLIENT_PROFILE && CURRENT_CLIENT_PROFILE.id) {
+      try {
+        const fresh = await api.listAbbonamenti(CURRENT_CLIENT_PROFILE.id);
+        if (Array.isArray(fresh)) {
+          CURRENT_CLIENT_PROFILE.abbonamenti = fresh.filter(a => (a.stato || 'attivo') !== 'archiviato');
+        }
+      } catch(_) {}
+    }
+
+    // 2) Ricostruisci CU via dashboardV2 (stesso pattern di switchAbbonamento)
+    //    Senza questo, CU.cicliMese resta col vecchio valore e i grafici non si aggiornano.
+    try {
+      if (CURRENT_CLIENT_PROFILE && typeof api.dashboardV2 === 'function') {
+        const dash = await api.dashboardV2(CURRENT_CLIENT_PROFILE);
+        const newCU = mapDashboardToUser(dash, CU ? CU.email : '');
+        if (CU) {
+          newCU.name = CU.name || newCU.name;
+          newCU.role = CU.role || 'client';
+        }
+        CU = newCU;
+        if (typeof fillC === 'function') fillC(CU);
+      }
+    } catch (e) { console.warn('saveAdmCicli rebuild CU err:', e); }
+
+    // 3) Re-render pg-pf completo: pannello admin + grafici + tabella proiezione
+    try { initCC(); } catch (e) { console.warn('saveAdmCicli initCC err:', e); }
+
     if (typeof showToast === 'function') showToast('✓ Cicli aggiornati e proiezione ricalcolata');
   } catch (err) {
     alert('Errore salvataggio: ' + (err && err.message ? err.message : String(err)));
