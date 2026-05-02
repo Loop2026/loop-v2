@@ -331,6 +331,9 @@ select.fil option{background:var(--navy2)}
     <!-- CLIENTE: PERFORMANCE -->
     <div class="pg" id="pg-pf">
       <div class="pg-h"><div class="pg-t">Performance & Proiezioni</div><div class="pg-s">Andamento mensile e proiezione a termine servizio</div></div>
+      <!-- ADMIN ONLY: pannello per impostare il numero di cicli mese stimati per abbonamento.
+           Visibile solo se USER_ROLE === 'admin'. Popolato da renderAdminCicliPanel() -->
+      <div id="adm-pf-cicli" style="display:none;margin-bottom:18px;padding:14px 18px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.3);border-radius:12px"></div>
       <div class="pgrid">
         <div class="ch-c"><div class="ct" style="margin-bottom:16px"><span data-ico="trend" data-ico-size="18"></span> Profitto cumulato</div><canvas id="chcum" height="200"></canvas></div>
         <div class="ch-c"><div class="ct" style="margin-bottom:16px"><span data-ico="bar" data-ico-size="18"></span> Cicli per mese</div><canvas id="chcic" height="200"></canvas></div>
@@ -4268,7 +4271,93 @@ const CD={plugins:{legend:{display:false},tooltip:{backgroundColor:'#0F1E35',bor
 let chCum = null;
 let chCic = null;
 
+// ============================================================================
+// ADMIN: pannello "cicli stimati" dentro Performance & Proiezioni
+// ----------------------------------------------------------------------------
+// Solo per USER_ROLE === 'admin'. Mostra una riga per ogni abbonamento del
+// cliente in vista (CURRENT_CLIENT_PROFILE.abbonamenti) con un input numerico
+// per cicli_mese e un pulsante Salva. Su save fa PUT /abbonamenti/:id e poi
+// refreshFromApi() per ricalcolare grafici e tabella proiezione.
+// ============================================================================
+function renderAdminCicliPanel() {
+  const box = document.getElementById('adm-pf-cicli');
+  if (!box) return;
+  if (USER_ROLE !== 'admin') { box.style.display = 'none'; return; }
+  const abbList = (CURRENT_CLIENT_PROFILE && Array.isArray(CURRENT_CLIENT_PROFILE.abbonamenti))
+    ? CURRENT_CLIENT_PROFILE.abbonamenti.filter(a => a && a.stato !== 'archiviato')
+    : [];
+  if (abbList.length === 0) {
+    box.innerHTML = '<div style="font-size:12.5px;color:var(--gray)">Nessun abbonamento attivo per cui impostare i cicli stimati.</div>';
+    box.style.display = 'block';
+    return;
+  }
+
+  let rowsHtml = '';
+  abbList.forEach(a => {
+    const ord = a.ordine || 1;
+    const piano = a.piano || '';
+    const alias = a.alias ? (' — "' + escAttr(a.alias) + '"') : '';
+    const cur = parseInt(a.cicli_mese, 10);
+    const valStr = (!isNaN(cur) && cur > 0) ? String(cur) : '15';
+    rowsHtml += ''
+      + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)">'
+      +   '<div style="flex:1;min-width:200px;font-size:13px;color:#E2E8F0">'
+      +     '<span style="background:rgba(168,85,247,.18);color:#C4B5FD;border:1px solid rgba(168,85,247,.35);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;margin-right:8px">A' + ord + '</span>'
+      +     escAttr(piano) + alias
+      +   '</div>'
+      +   '<div style="display:flex;align-items:center;gap:8px">'
+      +     '<label style="font-size:11.5px;color:var(--gray)">Cicli/mese stimati</label>'
+      +     '<input type="number" id="adm-cic-' + escAttr(a.id) + '" min="1" max="30" value="' + valStr + '" '
+      +       'style="width:70px;padding:6px 8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;font-family:inherit;text-align:center;font-size:13px">'
+      +     '<button class="btn-s" style="padding:6px 14px;font-size:12px" onclick="saveAdmCicli(\'' + escAttr(a.id) + '\')">Salva &amp; ricalcola</button>'
+      +   '</div>'
+      + '</div>';
+  });
+
+  box.innerHTML = ''
+    + '<div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#C4B5FD;margin-bottom:6px">'
+    +   '<span>🛠️</span>'
+    +   '<span>Admin · Cicli mese stimati per abbonamento</span>'
+    + '</div>'
+    + '<div style="font-size:11.5px;color:var(--gray);margin-bottom:8px;line-height:1.5">'
+    +   'Questo valore alimenta i grafici di proiezione e la tabella mensile sotto. '
+    +   'Modificalo per riflettere il numero minimo di cicli al mese che ti aspetti su ogni abbonamento del cliente. Visibile solo agli admin.'
+    + '</div>'
+    + rowsHtml;
+  box.style.display = 'block';
+}
+
+async function saveAdmCicli(abbId) {
+  if (USER_ROLE !== 'admin') { alert('Operazione riservata agli admin.'); return; }
+  const inp = document.getElementById('adm-cic-' + abbId);
+  if (!inp) return;
+  const n = parseInt(inp.value, 10);
+  if (isNaN(n) || n < 1 || n > 30) {
+    alert('Inserisci un numero intero tra 1 e 30.');
+    inp.focus();
+    return;
+  }
+  // Trova il bottone associato e disabilita durante il save
+  const btn = inp.parentElement && inp.parentElement.querySelector('button');
+  const origLabel = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio…'; }
+  try {
+    await api.updateAbbonamento(abbId, { cicli_mese: n });
+    // Refresh completo: ricarica abbonamenti, ricostruisce CU e ricomputa grafici/tabella.
+    await refreshFromApi();
+    // Re-render pannello con il valore aggiornato.
+    renderAdminCicliPanel();
+    if (typeof showToast === 'function') showToast('✓ Cicli aggiornati e proiezione ricalcolata');
+  } catch (err) {
+    alert('Errore salvataggio: ' + (err && err.message ? err.message : String(err)));
+    if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+  }
+}
+
 function initCC() {
+  // Pannello admin (visibile solo se USER_ROLE === 'admin')
+  try { renderAdminCicliPanel(); } catch(e){ console.warn('renderAdminCicliPanel err:', e); }
+
   const u = CU;
   if (!u) return;
   const mesiTot = u.mesiTot || 12;
