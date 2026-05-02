@@ -469,7 +469,8 @@ select.fil option{background:var(--navy2)}
         <div style="padding:14px 24px;border-bottom:1px solid rgba(255,255,255,.07)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
             <div class="ct" style="margin:0">Clienti registrati</div>
-            <button class="btn-a" onclick="sp('pg-na')">+ Attiva nuovo cliente</button>
+            <!-- v2 (2026-05-02): bottone "Attiva nuovo cliente" rimosso. I nuovi clienti
+                 arrivano dal Gestionale via webhook /api/webhook/crea-utente. -->
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap" id="day-filter-gc">
             <button class="fb on" style="padding:5px 12px;font-size:12px" onclick="filterDay(0,this,'adtb')">Tutti</button>
@@ -608,11 +609,22 @@ select.fil option{background:var(--navy2)}
     </div>
 
     <!-- MODAL MODIFICA CLIENTE -->
+    <!-- v2 (2026-05-02): l'anagrafica e gli abbonamenti sono READ-ONLY in Loop v2.
+         Source of truth: Gestionale Phoenix. Solo le credenziali MT5 (asset Loop-native)
+         restano modificabili dalla scheda abbonamento. -->
     <div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center">
       <div style="background:var(--navy2);border:1px solid rgba(37,99,235,.3);border-radius:16px;padding:32px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.5)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-          <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700">Modifica Cliente</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700">Scheda Cliente</div>
           <button onclick="closeModal()" style="background:rgba(255,255,255,.08);border:none;border-radius:50%;width:32px;height:32px;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+        </div>
+        <!-- Banner read-only: spiega che l'unica cosa modificabile sono le credenziali MT5 -->
+        <div style="margin-bottom:20px;padding:12px 14px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.3);border-radius:10px;font-size:12.5px;color:#CBD5E1;line-height:1.55;display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:16px;line-height:1">🔒</span>
+          <div>
+            <strong style="color:var(--blue-xl)">Dati anagrafici e abbonamenti in sola lettura.</strong> Sono gestiti dal Gestionale Aziendale (fonte di verità). Per modificarli accedi al Gestionale.
+            <br>L'unica cosa modificabile in questa pagina sono le <strong style="color:#34D399">credenziali MT5</strong> di ciascun abbonamento.
+          </div>
         </div>
 
         <!-- Tabs del modal -->
@@ -624,56 +636,50 @@ select.fil option{background:var(--navy2)}
         <!-- NOTA v2: il tab "MT5 Broker" è stato rimosso. In v2 (relazione 1:1:1)
              le credenziali MT5 vivono SU ogni abbonamento — gestiscile dal tab "Abbonamenti" → 🔐 Credenziali MT5. -->
 
-        <!-- TAB: DATI PERSONALI -->
+        <!-- TAB: DATI PERSONALI (read-only — fonte di verità: Gestionale) -->
         <div id="mpanel-dati">
           <div class="fr" style="margin-bottom:16px">
-            <div class="fgl"><label class="fll">Nome</label><input type="text" class="fil" id="m-nome" placeholder="Mario"></div>
-            <div class="fgl"><label class="fll">Cognome</label><input type="text" class="fil" id="m-cogn" placeholder="Rossi"></div>
+            <div class="fgl"><label class="fll">Nome</label><input type="text" class="fil" id="m-nome" placeholder="Mario" readonly style="opacity:.65;cursor:not-allowed"></div>
+            <div class="fgl"><label class="fll">Cognome</label><input type="text" class="fil" id="m-cogn" placeholder="Rossi" readonly style="opacity:.65;cursor:not-allowed"></div>
           </div>
-          <div class="fgl"><label class="fll">Email (login)</label><input type="email" class="fil" id="m-email" placeholder="mario@email.it"></div>
-          <div class="fgl"><label class="fll">Nuova password <span style="color:var(--gray);font-size:11px">(lascia vuoto per non cambiare)</span></label><input type="text" class="fil" id="m-pwd" placeholder=""></div>
-          <div class="fgl"><label class="fll">Telefono</label><input type="text" class="fil" id="m-tel" placeholder="+39 333 000 0000"></div>
-          <div class="fgl"><label class="fll">Note interne</label><textarea class="fil" id="m-note" rows="2" placeholder="Note operative..." style="resize:vertical"></textarea></div>
+          <div class="fgl"><label class="fll">Email (login)</label><input type="email" class="fil" id="m-email" placeholder="mario@email.it" readonly style="opacity:.65;cursor:not-allowed"></div>
+          <div class="fgl"><label class="fll">Nuova password <span style="color:var(--gray);font-size:11px">(gestita dal Gestionale)</span></label><input type="text" class="fil" id="m-pwd" placeholder="" readonly style="opacity:.65;cursor:not-allowed"></div>
+          <div class="fgl"><label class="fll">Telefono</label><input type="text" class="fil" id="m-tel" placeholder="+39 333 000 0000" readonly style="opacity:.65;cursor:not-allowed"></div>
+          <div class="fgl"><label class="fll">Note interne</label><textarea class="fil" id="m-note" rows="2" placeholder="Note operative..." style="resize:vertical;opacity:.65;cursor:not-allowed" readonly></textarea></div>
         </div>
 
-        <!-- TAB: SERVIZIO -->
+        <!-- TAB: SERVIZIO (read-only — fonte di verità: Gestionale) -->
         <div id="mpanel-servizio" style="display:none">
           <div class="fgl">
             <label class="fll">Piano</label>
-            <select class="fil sel" id="m-piano">
+            <select class="fil sel" id="m-piano" disabled style="opacity:.65;cursor:not-allowed">
               <option value="trimestrale">Trimestrale — $1.250</option>
               <option value="semestrale">Semestrale — $2.250</option>
               <option value="annuale">Annuale — $4.250</option>
             </select>
           </div>
           <div class="fr">
-            <div class="fgl"><label class="fll">Capitale depositato ($)</label><input type="number" class="fil" id="m-cap" placeholder="5500"></div>
-            <div class="fgl"><label class="fll">Cicli/mese stimati</label><input type="number" class="fil" id="m-cicli" placeholder="15"></div>
+            <div class="fgl"><label class="fll">Capitale depositato ($)</label><input type="number" class="fil" id="m-cap" placeholder="5500" readonly style="opacity:.65;cursor:not-allowed"></div>
+            <div class="fgl"><label class="fll">Cicli/mese stimati <span style="color:var(--gray);font-size:11px">(modifica in Performance &amp; Proiezioni)</span></label><input type="number" class="fil" id="m-cicli" placeholder="15" readonly style="opacity:.65;cursor:not-allowed"></div>
           </div>
           <div class="fr">
-            <div class="fgl"><label class="fll">Data inizio</label><input type="date" class="fil" id="m-data"></div>
-            <div class="fgl"><label class="fll">Data scadenza</label><input type="date" class="fil" id="m-scad"></div>
+            <div class="fgl"><label class="fll">Data inizio</label><input type="date" class="fil" id="m-data" readonly style="opacity:.65;cursor:not-allowed"></div>
+            <div class="fgl"><label class="fll">Data scadenza</label><input type="date" class="fil" id="m-scad" readonly style="opacity:.65;cursor:not-allowed"></div>
           </div>
           <div class="fgl">
             <label class="fll">Stato account</label>
-            <select class="fil sel" id="m-stato">
+            <select class="fil sel" id="m-stato" disabled style="opacity:.65;cursor:not-allowed">
               <option value="attivo">✅ Attivo</option>
               <option value="sospeso">⏸ Sospeso</option>
             </select>
           </div>
         </div>
 
-        <!-- TAB: ABBONAMENTI (multi-conto) -->
+        <!-- TAB: ABBONAMENTI (read-only sui dati piano/sconto/alias/stato — modificabili solo le credenziali MT5) -->
         <div id="mpanel-abbonamenti" style="display:none">
           <div style="background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--blue-xl);display:flex;align-items:center;gap:10px">
             <span data-ico="info" data-ico-size="16"></span>
-            <span>Un cliente puo' avere piu' abbonamenti (= piu' broker/conti MT5). Il secondo in poi e' obbligatoriamente Annuale ed e' l'unico per cui si puo' impostare uno sconto.</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div style="font-size:13px;color:var(--gray)">Abbonamenti del cliente</div>
-            <button onclick="openNuovoAbbonamentoFromModal()" class="btn-p" style="padding:8px 14px;font-size:13px;display:inline-flex;align-items:center;gap:6px">
-              <span data-ico="plus" data-ico-size="14"></span> Nuovo abbonamento
-            </button>
+            <span>Lista abbonamenti del cliente, in sola lettura. Per ogni abbonamento puoi accedere alle <strong>credenziali MT5</strong> e modificarle.</span>
           </div>
           <div id="m-abb-list" style="display:flex;flex-direction:column;gap:10px;min-height:60px">
             <div style="padding:20px;text-align:center;color:var(--gray);font-size:13px">Caricamento…</div>
@@ -682,15 +688,9 @@ select.fil option{background:var(--navy2)}
 
         <!-- (TAB MT5 Broker rimosso in v2 — credenziali ora per-abbonamento) -->
 
-        <!-- Footer modal -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding-top:20px;border-top:1px solid rgba(255,255,255,.07)">
-          <button onclick="deleteClient()" style="background:rgba(185,28,28,.15);color:#FCA5A5;border:1px solid rgba(185,28,28,.3);border-radius:8px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">
-            🗑 Elimina Cliente
-          </button>
-          <div style="display:flex;gap:10px">
-            <button onclick="closeModal()" class="btn-s" style="padding:10px 20px">Annulla</button>
-            <button onclick="saveClient()" class="btn-a" style="padding:10px 24px">💾 Salva modifiche</button>
-          </div>
+        <!-- Footer modal: solo "Chiudi". Salva/Elimina/Nuovo abbonamento rimossi (read-only). -->
+        <div style="display:flex;justify-content:flex-end;align-items:center;margin-top:28px;padding-top:20px;border-top:1px solid rgba(255,255,255,.07)">
+          <button onclick="closeModal()" class="btn-a" style="padding:10px 28px">Chiudi</button>
         </div>
       </div>
     </div>
@@ -3027,8 +3027,7 @@ function renderAgrGrid() {
         <span style="font-size:12px;color:${scadExpired ? '#FCA5A5' : scadSoon ? '#FCD34D' : 'rgba(255,255,255,.65)'}">${c.scad || '—'}${scadExpired ? ' ⚠️' : scadSoon ? ' ⏰' : ''}</span>
       </div>
       <div style="display:flex;align-items:center;gap:6px;padding:10px 8px">
-        <button onclick="openNuovoAbbonamentoForClient('${c.id}')" title="Aggiungi nuovo abbonamento" style="padding:6px 10px;font-size:12px;display:inline-flex;align-items:center;justify-content:center;gap:4px;border-radius:8px;border:1px solid rgba(37,99,235,.45);background:rgba(37,99,235,.18);color:#93C5FD;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">${ico('plus',13)}<span style="font-size:11px">Abb.</span></button>
-        <button class="btn-a" onclick="openEditModal('${c.id}')" title="Modifica" style="padding:6px 10px;font-size:12px;display:inline-flex;align-items:center;justify-content:center">${ico('pencil',14)}</button>
+        <button class="btn-a" onclick="openEditModal('${c.id}')" title="Apri scheda cliente" style="padding:6px 10px;font-size:12px;display:inline-flex;align-items:center;justify-content:center">${ico('eye',14)}</button>
       </div>
     </div>`;
   }).join('');
@@ -3156,13 +3155,9 @@ async function renderAbbonamentiInModal(clientId){
 
     const aliasHtml = alias ? ('<div style="font-size:12px;color:var(--gray);margin-top:4px">"'+ escAttr(alias) +'"</div>') : '';
     const capHtml   = (cap != null) ? ('<span>Capitale: <strong style="color:rgba(255,255,255,.85)">'+fmtMoneyEur(cap)+'</strong></span>') : '';
-    const statoBtn  = isAttivo
-      ? ('<button class="btn-s" style="padding:6px 10px;font-size:12px" onclick="setAbbStato(\''+a.id+'\',\'sospeso\')" title="Sospendi">⏸ Sospendi</button>')
-      : ('<button class="btn-s" style="padding:6px 10px;font-size:12px" onclick="setAbbStato(\''+a.id+'\',\'attivo\')" title="Riattiva">▶ Riattiva</button>');
+    // v2 (2026-05-02): bottoni di edit (statoBtn, scontoBtn) RIMOSSI — anagrafica e
+    // abbonamenti sono read-only in Loop. Manteniamo solo il valore visivo dello sconto.
     const scontoStr = (sconto > 0) ? (' &nbsp; · &nbsp; Sconto <strong style="color:#FCD34D">-'+fmtMoneyEur(sconto)+'</strong>') : '';
-    const scontoBtn = canSconto
-      ? ('<button class="btn-s" style="padding:5px 9px;font-size:12px" onclick="editAbbSconto(\''+a.id+'\')">✎ Modifica sconto</button>')
-      : ('<span style="font-size:11px;color:var(--gray);font-style:italic">Sconto non ammesso sul 1° abbonamento</span>');
 
     // Riepilogo credenziali MT5 (1 abb = 1 broker, relazione 1:1:1)
     const hasMT5 = !!(a.mt5_server || a.mt5_account);
@@ -3185,29 +3180,22 @@ async function renderAbbonamentiInModal(clientId){
          +         capHtml
          +       '</div>'
          +     '</div>'
-         +     '<div style="display:flex;gap:6px;flex-wrap:wrap">'
-         +       statoBtn
-         +     '</div>'
          +   '</div>'
-         // Riga prezzo + sconto
-         +   '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05);gap:12px;flex-wrap:wrap">'
+         // Riga prezzo + sconto (solo lettura, niente bottone edit sconto)
+         +   '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05)">'
          +     '<div style="font-size:12px;color:var(--gray)">Prezzo base <strong style="color:rgba(255,255,255,.85)">'+fmtMoneyEur(prezzoBase)+'</strong>'
          +       scontoStr
          +       ' &nbsp; · &nbsp; Finale <strong style="color:#34D399">'+fmtMoneyEur(prezzoFinale)+'</strong>'
          +     '</div>'
-         +     '<div id="abb-sconto-actions-'+a.id+'">'
-         +       scontoBtn
-         +     '</div>'
          +   '</div>'
-         // Riga credenziali MT5 (1 abb = 1 broker, relazione 1:1:1)
+         // Riga credenziali MT5 (1 abb = 1 broker, relazione 1:1:1) — UNICA azione modificabile
          +   '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'
          +     '<div style="font-size:12px;color:var(--gray)">'
          +       '<strong style="color:rgba(255,255,255,.75)">MT5:</strong> '
          +       mt5Html
          +     '</div>'
          +     '<div style="display:flex;gap:6px;flex-wrap:wrap">'
-         +       '<button class="btn-s" style="padding:5px 9px;font-size:11.5px" onclick="openAbbMT5Modal(\''+a.id+'\')">🔐 Credenziali MT5</button>'
-         +       '<button class="btn-s" style="padding:5px 9px;font-size:11.5px;background:transparent;border:1px solid rgba(255,255,255,.15)" onclick="editAbbAlias(\''+a.id+'\')">✎ Alias</button>'
+         +       '<button class="btn-a" style="padding:5px 11px;font-size:11.5px" onclick="openAbbMT5Modal(\''+a.id+'\')">🔐 Credenziali MT5</button>'
          +     '</div>'
          +   '</div>'
          + '</div>';
