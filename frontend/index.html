@@ -2014,6 +2014,8 @@ async function loginC(){
     }
     // V2: il dashboard non e' piu' un endpoint dedicato, ma viene sintetizzato
     // dal profilo (gia' contiene abbonamenti[]) + chiamata a /trades?abbonamento_id=X.
+    // Persistenza sessione (stessa scheda): sopravvive al giro sul checkout/OxaPay.
+    try { sessionStorage.setItem('loop_sess', JSON.stringify({ t: API_TOKEN, e: e, p: CURRENT_CLIENT_PROFILE })); } catch(_){}
     const dash = await api.dashboardV2(CURRENT_CLIENT_PROFILE);
     go(mapDashboardToUser(dash, e),'client');
   } catch(err) {
@@ -2080,7 +2082,7 @@ async function loginA(){
   }
 }
 function go(u,r){CU=u;document.getElementById('auth').style.display='none';document.getElementById('app').style.display='block';document.getElementById('sn').textContent=u.name;document.getElementById('sr').textContent=r==='admin'?'Amministratore':'Cliente';buildNav(r);if(r==='client'){renderAbbonamentiTabs();fillC(u);sp('pg-pan');}else{fillA();sp('pg-ad');}}
-function logout(){CU=null;API_TOKEN=null;USER_ROLE=null;ADMIN_USER=null;CURRENT_CLIENT_PROFILE=null;CURRENT_ABBONAMENTO_IDX=0;if(chCum&&chCum.destroy){chCum.destroy();chCum=null;}if(chCic&&chCic.destroy){chCic.destroy();chCic=null;}hideAdminViewingBanner();document.getElementById('auth').style.display='flex';document.getElementById('app').style.display='none';}
+function logout(){try{sessionStorage.removeItem('loop_sess');}catch(_){ }CU=null;API_TOKEN=null;USER_ROLE=null;ADMIN_USER=null;CURRENT_CLIENT_PROFILE=null;CURRENT_ABBONAMENTO_IDX=0;if(chCum&&chCum.destroy){chCum.destroy();chCum=null;}if(chCic&&chCic.destroy){chCic.destroy();chCic=null;}hideAdminViewingBanner();document.getElementById('auth').style.display='flex';document.getElementById('app').style.display='none';}
 const NAV_ICONS={'pg-pan':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="1" opacity=".9"/><rect x="14" y="3" width="7" height="7" rx="1" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1" opacity=".7"/></svg>','pg-op':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>','pg-st':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>','pg-pf':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>','pg-mov':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="14" width="4" height="8" rx="1" opacity=".5"/><rect x="9" y="9" width="4" height="13" rx="1" opacity=".7"/><rect x="16" y="4" width="4" height="18" rx="1" opacity=".9"/></svg>','pg-ad':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="1" opacity=".9"/><rect x="14" y="3" width="7" height="7" rx="1" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1" opacity=".7"/></svg>','pg-gc':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v1h20v-1c0-3.3-6.7-5-10-5z" opacity=".9"/></svg>','pg-agr':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>','pg-na':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z" opacity=".7"/><path d="M19 8v6M16 11h6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>','pg-an':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="14" width="4" height="8" rx="1" opacity=".5"/><rect x="9" y="9" width="4" height="13" rx="1" opacity=".7"/><rect x="16" y="4" width="4" height="18" rx="1" opacity=".9"/></svg>','pg-bro':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>','pg-ui':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L3 7v6c0 5 3.9 9.7 9 11 5.1-1.3 9-6 9-11V7l-9-5z" opacity=".9"/></svg>','pg-log':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'};
 const CN=[{id:'pg-pan',i:'dashboard',l:'Panoramica'},{id:'pg-op',i:'bolt',l:'Operazione Corrente'},{id:'pg-st',i:'clock',l:'Storico Operazioni'},{id:'pg-pf',i:'trend',l:'Performance & Proiezioni'},{id:'pg-mov',i:'money',l:'Movimenti Broker'},{id:'pg-cm5',i:'key',l:'Credenziali MT5'},{id:'act-buy-challenge',i:'cart',l:'Acquista nuova challenge',action:'openProximaCheckout()',external:true,sectionBefore:'Prop firm'}];
 const AN=[{id:'pg-ad',i:'dashboard',l:'Dashboard Globale'},{id:'pg-gc',i:'users',l:'Gestione Clienti'},{id:'pg-agr',i:'identification',l:'Anagrafica'},{id:'pg-an',i:'bar',l:'Analytics Globali'},{id:'pg-bro',i:'money',l:'Operazioni Broker'},{id:'pg-ui',i:'shield',l:'Utenti Interni'},{id:'pg-log',i:'search',l:'Log Accessi'},{id:'act-wipe',i:'trash',l:'Reset stato zero',action:'wipeTestDataConfirm()',danger:true,sectionBefore:'DEV / Test'}];
@@ -3634,10 +3636,65 @@ async function cm5Submit(aid){
 //   arriva da Loop — se in futuro vuoi tracciare i referral chiedi a Proxima
 //   un parametro custom tipo ?ref=loop).
 // ============================================================================
-const PROXIMA_CHECKOUT_URL = 'https://app.proximafunded.com/checkout';
+const PROXIMA_CHECKOUT_URL = 'https://checkout.proximafunded.com';
 
-function openProximaCheckout(){
-  window.open(PROXIMA_CHECKOUT_URL, '_blank', 'noopener,noreferrer');
+// Checkout interno Loop (replica Proxima): link FIRMATO dalla edge fn checkout-link
+// cosi' il billing arriva precompilato e bloccato con gli stessi dati di dashboard e broker.
+// A pagamento concluso OxaPay riporta il cliente QUI in dashboard (return_url).
+(function(){
+  const q = new URLSearchParams(location.search);
+  if(q.get('checkout') === 'success'){
+    setTimeout(function(){ alert('\u2705 Pagamento Ricevuto! La tua challenge \u00e8 pronta ed \u00e8 stata caricata sul Sistema Loop, per avviare un nuovo ciclo.'); }, 600);
+    history.replaceState(null, '', location.pathname);
+  }
+})();
+
+// Ripresa sessione cliente (stessa scheda): dopo il rientro da OxaPay o un refresh
+(async function(){
+  try{
+    const raw = sessionStorage.getItem('loop_sess');
+    if(!raw) return;
+    const s = JSON.parse(raw);
+    if(!s || !s.t || !s.p) return;
+    // Niente "flash" del login: nascondo subito l'auth e mostro un velo di caricamento
+    const authEl = document.getElementById('auth');
+    if(authEl) authEl.style.display='none';
+    const veil = document.createElement('div');
+    veil.id='sess-veil';
+    veil.style.cssText='position:fixed;inset:0;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:#0b1220;color:#93a0b1;font-size:15px;z-index:9999';
+    veil.innerHTML='<div style="width:34px;height:34px;border:3px solid rgba(147,160,177,.25);border-top-color:#93a0b1;border-radius:999px;animation:sessspin .8s linear infinite"></div><div>Rientro nella dashboard…</div><style>@keyframes sessspin{to{transform:rotate(360deg)}}</style>';
+    document.body.appendChild(veil);
+    API_TOKEN = s.t; USER_ROLE = 'client'; CURRENT_CLIENT_PROFILE = s.p;
+    try{
+      const fresh = await api.listAbbonamenti(s.p.id);
+      if(Array.isArray(fresh)) CURRENT_CLIENT_PROFILE.abbonamenti = fresh.filter(a => (a.stato || 'attivo') !== 'archiviato');
+    }catch(_){/* fallback al profilo salvato */}
+    const _abb = Array.isArray(CURRENT_CLIENT_PROFILE.abbonamenti) ? CURRENT_CLIENT_PROFILE.abbonamenti : [];
+    CURRENT_ABBONAMENTO_IDX = (_abb.length >= 2) ? -1 : (_abb.length === 1 ? 0 : -1);
+    const dash = await api.dashboardV2(CURRENT_CLIENT_PROFILE);
+    go(mapDashboardToUser(dash, s.e), 'client');
+    try{ document.getElementById('sess-veil').remove(); }catch(_){}
+  }catch(err){
+    console.warn('Ripresa sessione fallita:', err);
+    try{ sessionStorage.removeItem('loop_sess'); }catch(_){}
+    try{ document.getElementById('sess-veil').remove(); }catch(_){}
+    const authEl2 = document.getElementById('auth');
+    if(authEl2) authEl2.style.display='flex';
+  }
+})();
+
+async function openProximaCheckout(){
+  try{
+    const r = await fetch(API_BASE + '/checkout-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + API_TOKEN },
+    });
+    const d = await r.json();
+    if(d && d.ok && d.url){ window.location.href = d.url; return; }
+    alert('Impossibile aprire il checkout: ' + (d && d.error ? d.error : 'riprova tra poco.'));
+  }catch(e){
+    alert('Impossibile aprire il checkout, riprova tra poco.');
+  }
 }
 
 // === ADMIN: WIPE DATI DI TEST (doppia conferma) ===
@@ -6407,6 +6464,164 @@ document.addEventListener('click', function(e) {
   if (e.target.id === 'bi-modal-overlay') closeBulkImportModal();
   if (e.target.id === 'bro-modal-overlay') closeBrokerLiveClientPicker();
 });
+</script>
+
+
+
+<script>
+/* PATCH 2026-08-13 v4 (testata live): giornata reale, badge G1>GN, KPI puliti, note compresse */
+
+(function(){
+  function wrapWhenReady(){
+    try {
+      if (typeof computeCycleState === 'function' && !computeCycleState.__loopPatched) {
+        var ccs = computeCycleState;
+        computeCycleState = function(a, trades){
+          var st = ccs.apply(this, arguments);
+          try { if (a && a.giorno_ciclo != null && st) { var g = Number(a.giorno_ciclo)||1; if (g<1) g=1; if (g>4) g=4; st.day = g; if (st.status === 'none') st.status = 'open'; } } catch(e) {}
+          return st;
+        };
+        computeCycleState.__loopPatched = true;
+      }
+      ['_profitContribution','_netProfitContribution'].forEach(function(fn){
+        if (typeof window[fn] === 'function' && !window[fn].__loopPatched) {
+          var o = window[fn];
+          window[fn] = function(x){ try { if (x && x.esito !== 'profit' && x.esito !== 'scenarioB') return 0; } catch(e) {} return o.apply(this, arguments); };
+          window[fn].__loopPatched = true;
+        }
+      });
+      if (typeof _renderSingleTradeRow === 'function' && !_renderSingleTradeRow.__loopPatched) {
+        var row = _renderSingleTradeRow;
+        _renderSingleTradeRow = function(t){
+          var h = row.apply(this, arguments);
+          try {
+            var inCorso = t && t.esito !== 'profit' && t.esito !== 'scenarioB';
+            var tmp = document.createElement('tbody');
+            tmp.innerHTML = h;
+            var g = Number(t && t.giorno) || 1; if (g<1) g=1; if (g>4) g=4;
+            var prog = 'G1'; for (var k=2; k<=g; k++) prog += ' \u2192 G' + k;
+            var fmNet = null; try { if (t && t.netto != null) fmNet = fmtMoney(Number(t.netto)); } catch(e) {}
+            var all = tmp.querySelectorAll('*');
+            for (var i=0;i<all.length;i++){
+              var el = all[i];
+              if (el.children.length) continue;
+              var txt = (el.textContent||'').trim();
+              if (inCorso && txt.indexOf('Scenario') !== -1) { el.textContent = prog; el.style.background='rgba(96,165,250,.15)'; el.style.color='#60A5FA'; el.style.border='1px solid rgba(96,165,250,.4)'; el.style.whiteSpace='nowrap'; el.style.fontWeight='700'; }
+              else if (inCorso && t.ris != null && (txt === String(t.ris) || txt === Number(t.ris).toFixed(1) || txt === Number(t.ris).toFixed(2))) { try { el.textContent = fmtMoney(Number(t.ris)); } catch(e){} el.style.color='#F59E0B'; }
+              else if (inCorso && fmNet && txt === fmNet) { el.textContent = '\u2014'; }
+              else if (t && t.note && txt === String(t.note).trim() && txt.length > 30) { el.title = txt; el.style.display='inline-block'; el.style.maxWidth='220px'; el.style.whiteSpace='nowrap'; el.style.overflow='hidden'; el.style.textOverflow='ellipsis'; el.style.verticalAlign='middle'; }
+            }
+            h = tmp.innerHTML;
+          } catch(e) {}
+          return h;
+        };
+        _renderSingleTradeRow.__loopPatched = true;
+      }
+    } catch(e) {}
+  }
+  wrapWhenReady();
+  var tries = 0;
+  var iv = setInterval(function(){ tries++; wrapWhenReady(); if (tries > 20) clearInterval(iv); }, 500);
+})();
+</script>
+
+<style id="login-restyle">
+#auth { background:#050b16!important; background-image:radial-gradient(ellipse 700px 500px at 12% 45%, rgba(37,78,145,.35), transparent 60%),radial-gradient(ellipse 600px 450px at 88% 75%, rgba(30,64,120,.25), transparent 60%)!important; }
+#auth .lp-topbar { padding:26px 38px; font-size:13px; font-weight:600; letter-spacing:.35em; color:#8b93a1; text-transform:uppercase; position:absolute; top:0; left:0; }
+#auth .auth-card { background:rgba(17,21,28,.92)!important; border:1px solid rgba(255,255,255,.06)!important; border-radius:22px!important; box-shadow:0 30px 80px rgba(0,0,0,.55)!important; max-width:484px!important; }
+#auth .logo-row { display:flex; justify-content:center; margin-bottom:26px; }
+#auth .logo-row img { width:96px!important; height:96px!important; object-fit:contain; border-radius:22px!important; border:1.5px solid rgba(90,140,210,.65); box-shadow:0 0 24px rgba(70,120,200,.35), inset 0 0 12px rgba(70,120,200,.15); padding:10px; }
+#auth .tabs { background:#0a1226!important; border:1px solid rgba(110,140,190,.3)!important; border-radius:14px!important; padding:5px!important; gap:5px!important; max-width:340px; margin:0 auto 26px!important; display:flex; }
+#auth .tab { flex:1; border:none!important; border-radius:10px!important; padding:11px 0!important; font-size:14.5px!important; font-weight:700!important; color:#8b93a1!important; background:transparent!important; box-shadow:none!important; }
+#auth .tab.on { color:#fff!important; background:linear-gradient(90deg,#2b57b4,#4f83d6)!important; box-shadow:0 6px 16px rgba(45,90,180,.35)!important; }
+#auth .auth-title { font-size:30px!important; font-weight:700!important; letter-spacing:-.7px!important; margin-bottom:16px!important; color:#fff!important; text-align:center!important; }
+#auth .auth-sub { font-size:15px!important; line-height:1.55!important; color:#97a0ae!important; max-width:320px; margin:0 auto 24px!important; text-align:center!important; }
+#auth .fl { font-size:12px!important; font-weight:600!important; letter-spacing:.22em!important; color:#7f9cc4!important; text-transform:uppercase!important; margin-bottom:10px!important; display:block; }
+#auth .fi { width:100%; background:#0a1226!important; border:1px solid rgba(110,140,190,.35)!important; border-radius:14px!important; padding:16px 18px!important; font-size:16px!important; color:#e8edf5!important; }
+#auth .fi:focus { border-color:rgba(120,170,235,.8)!important; box-shadow:0 0 0 3px rgba(70,120,200,.18)!important; }
+#auth .btn-p { width:100%; border:none!important; border-radius:14px!important; padding:17px!important; font-size:16px!important; font-weight:700!important; color:#fff!important; background:linear-gradient(90deg,#2b57b4 0%,#4f83d6 55%,#7db2f0 100%)!important; box-shadow:0 10px 26px rgba(45,90,180,.4)!important; }
+#auth .demo-hint { display:none!important; }
+</style>
+<script>
+/* PATCH 2026-08-14: nuova pagina di login (design unificato Loop) */
+(function(){
+  var apply = function(){
+  try {
+    const auth = document.getElementById('auth');
+    if (!auth || auth.querySelector('.lp-topbar')) return;
+    const tb = document.createElement('div');
+    tb.className = 'lp-topbar';
+    tb.textContent = 'LOOP  ·  DASHBOARD CLIENTI';
+    auth.prepend(tb);
+    const set = (root, title, sub, btn) => {
+      const t = root.querySelector('.auth-title'); if (t) t.textContent = title;
+      const s = root.querySelector('.auth-sub'); if (s) s.textContent = sub;
+      const b = root.querySelector('.btn-p'); if (b) b.textContent = btn + '  →';
+    };
+    set(document.getElementById('fc'), 'Accedi alla tua Dashboard', 'Area riservata clienti Loop · i tuoi abbonamenti e le operazioni, in tempo reale.', 'Entra nella Dashboard');
+    set(document.getElementById('fa'), 'Accesso amministrazione', 'Ambiente interno Phoenix Data Analitics · console operativa riservata al team Loop.', 'Entra nella console');
+  } catch(e) {}
+};
+  apply();
+  var n = 0;
+  var iv = setInterval(function(){ n++; apply(); if (n > 10) clearInterval(iv); }, 500);
+})();
+</script>
+
+<style id="mobile-optim">
+/* ── OTTIMIZZAZIONE MOBILE (≤860px) ── */
+#mob-menu-btn { display:none; }
+@media (max-width: 860px) {
+  .sidebar { transform:translateX(-105%); transition:transform .25s ease; z-index:1000; width:264px; box-shadow:8px 0 40px rgba(0,0,0,.5); }
+  .sidebar.mob-open { transform:translateX(0); }
+  #mob-overlay { display:none; position:fixed; inset:0; background:rgba(3,8,18,.6); z-index:999; }
+  #mob-overlay.on { display:block; }
+  #mob-menu-btn.app-on { display:flex; }
+  #mob-menu-btn { position:fixed; top:12px; left:12px; z-index:1001; width:44px; height:44px; border-radius:12px; border:1px solid rgba(255,255,255,.15); background:#0f1e35; color:#fff; font-size:20px; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,.4); }
+  .main { margin-left:0 !important; padding:16px 14px !important; padding-top:66px !important; }
+  .kgrid { grid-template-columns:repeat(2, 1fr) !important; gap:10px !important; }
+  .two, .pgrid { grid-template-columns:1fr !important; }
+  .op-grid { grid-template-columns:1fr !important; }
+  .card { padding:16px !important; }
+  .pg-h { margin-bottom:16px !important; }
+  .pg-h h1, .pg-h h2 { font-size:22px !important; }
+  /* tabelle scorrevoli in orizzontale */
+  table { display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:nowrap; }
+  /* login */
+  .auth-card { width:94vw !important; }
+  #auth .lp-topbar { padding:16px 18px !important; font-size:11px !important; }
+  #auth form > div > div:first-child { padding:28px 22px 22px !important; }
+  #auth form > div > div:last-child { padding:22px 22px 28px !important; }
+  /* modali entro schermo */
+  #modal-overlay > div, .modal, [class*="modal-box"] { max-width:94vw !important; }
+  /* pulsanti e filtri che vanno a capo */
+  .pg-h > div, .abb-tabs { flex-wrap:wrap; }
+}</style>
+<script>
+/* PATCH 2026-08-14 MOBILE: sidebar off-canvas, griglie 1 colonna, tabelle scorrevoli */
+(function(){
+  var apply = function(){
+  try {
+    if (!document.getElementById('mob-overlay')) {
+      const ov = document.createElement('div'); ov.id = 'mob-overlay'; document.body.append(ov);
+      const btn = document.createElement('button'); btn.id = 'mob-menu-btn'; btn.innerHTML = '\\u2630'; btn.setAttribute('aria-label','Menu'); document.body.append(btn);
+      const sb = () => document.querySelector('.sidebar');
+      const close = () => { sb()?.classList.remove('mob-open'); ov.classList.remove('on'); };
+      btn.addEventListener('click', () => { sb()?.classList.toggle('mob-open'); ov.classList.toggle('on', sb()?.classList.contains('mob-open')); });
+      ov.addEventListener('click', close);
+      document.addEventListener('click', (e) => {
+        const t = e.target;
+        if (t && t.closest && t.closest('#snav') && sb()?.classList.contains('mob-open')) close();
+      });
+    }
+    const app = document.getElementById('app');
+    const visible = app && getComputedStyle(app).display !== 'none';
+    document.getElementById('mob-menu-btn')?.classList.toggle('app-on', !!visible);
+  } catch(e) {}
+};
+  apply();
+  setInterval(apply, 800);
+})();
 </script>
 </body>
 </html>
