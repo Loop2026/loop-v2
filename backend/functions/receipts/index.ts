@@ -58,6 +58,21 @@ serve(async (req: Request) => {
       return json({ ok: true, url: su.signedUrl, receipt_no: o.receipt_no });
     }
 
+    // Cancella un PDF orfano dal bucket 'receipts' (nessuna riga checkout_orders lo referenzia).
+    // Serve a pulire i residui di test senza rischiare di toccare una ricevuta reale.
+    if (action === 'delete_orphan') {
+      const paths: string[] = Array.isArray(b.paths) ? b.paths : (b.path ? [b.path] : []);
+      if (!paths.length) return json({ error: 'path_required' }, 400);
+      const { data: linked } = await sb.from('checkout_orders').select('receipt_path').in('receipt_path', paths);
+      const inUse = new Set((linked || []).map((r: any) => r.receipt_path));
+      const removable = paths.filter((p) => !inUse.has(p));
+      const skipped = paths.filter((p) => inUse.has(p));
+      if (!removable.length) return json({ ok: true, removed: [], skipped });
+      const { error: rmErr } = await sb.storage.from('receipts').remove(removable);
+      if (rmErr) return json({ error: 'remove_failed', detail: rmErr.message }, 500);
+      return json({ ok: true, removed: removable, skipped });
+    }
+
     // list con filtri
     let q = sb.from('checkout_orders').select(COLS).eq('status', 'paid').order('paid_at', { ascending: false }).limit(2000);
     if (b.from) q = q.gte('paid_at', b.from);
