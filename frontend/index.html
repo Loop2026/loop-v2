@@ -308,15 +308,9 @@ select.fil option{background:var(--navy2)}
     </div>
     <!-- CLIENTE: STORICO -->
     <div class="pg" id="pg-st">
-      <div class="pg-h" style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap">
-        <div style="flex:1;min-width:260px">
-          <div class="pg-t">Storico Operazioni</div>
-          <div class="pg-s">Tutte le operazioni chiuse del tuo account</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button id="btn-bulk-import" class="btn-s" onclick="openBulkImportModal()" style="padding:10px 16px;margin-top:6px;white-space:nowrap;display:none">📥 Importa da MetaApi</button>
-          <button id="btn-nuova-challenge" class="btn-a" onclick="openNewChallengeModal()" style="padding:10px 20px;margin-top:6px;white-space:nowrap;display:none">+ Registra challenge</button>
-        </div>
+      <div class="pg-h">
+        <div class="pg-t">Storico Operazioni</div>
+        <div class="pg-s">Tutte le operazioni chiuse del tuo account</div>
       </div>
       <div class="card" style="padding:20px 24px 0">
         <div class="fltrs">
@@ -847,7 +841,9 @@ select.fil option{background:var(--navy2)}
       <div style="margin-bottom:16px;max-width:420px">
         <input id="vc-search" oninput="renderVistaCliente()" placeholder="Cerca per nome, email o ID…" style="width:100%;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-family:inherit;font-size:14px">
       </div>
-      <div id="vc-list" style="display:flex;flex-direction:column;gap:8px"><div style="padding:30px;text-align:center;color:var(--gray)">Caricamento clienti…</div></div>
+      <div style="max-height:calc(100vh - 260px);overflow-y:auto;overflow-x:hidden">
+        <div id="vc-list" style="display:flex;flex-direction:column;gap:8px"><div style="padding:30px;text-align:center;color:var(--gray)">Caricamento clienti…</div></div>
+      </div>
     </div>
 
     <div class="pg" id="pg-ui">
