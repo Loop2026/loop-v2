@@ -64,6 +64,7 @@ serve(async (req: Request) => {
         amount: Number(o.amount) || 0,
         address: o.address ?? null,
         track_id: o.track_id != null ? String(o.track_id) : null,
+        payment_method: o.payment_method === 'card' ? 'card' : 'crypto',
         status: 'created',
       }, { onConflict: 'order_id' });
       if (error) return json({ error: 'save_failed', detail: error.message }, 500);

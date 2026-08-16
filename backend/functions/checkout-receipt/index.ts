@@ -70,7 +70,7 @@ const money = (n: number) => n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 // ── PDF ────────────────────────────────────────────────────────────────────
 async function buildReceiptPdf(o: {
   receiptNo: string; date: string; name: string; email: string; phone: string;
-  address: string; orderId: string; trackId: string;
+  address: string; orderId: string; trackId: string; methodLabel: string;
   lines: Array<{ label: string; qty: number; unit: number; total: number }>;
   total: number;
 }): Promise<string> {
@@ -171,7 +171,7 @@ async function buildReceiptPdf(o: {
   // Dettagli pagamento
   ty -= 44;
   page.drawText('PAYMENT DETAILS', { x: 50, y: ty, size: 8.5, font: bold, color: GOLD }); ty -= 15;
-  page.drawText('Method: Cryptocurrency — processed by OxaPay', { x: 50, y: ty, size: 9, font: reg, color: GRAY }); ty -= 12;
+  page.drawText(`Method: ${o.methodLabel}`, { x: 50, y: ty, size: 9, font: reg, color: GRAY }); ty -= 12;
   page.drawText(`Order ID: ${o.orderId}`, { x: 50, y: ty, size: 9, font: reg, color: GRAY }); ty -= 12;
   if (o.trackId) { page.drawText(`Track ID: ${o.trackId}`, { x: 50, y: ty, size: 9, font: reg, color: GRAY }); ty -= 12; }
   page.drawText('Status: PAID', { x: 50, y: ty, size: 9.5, font: bold, color: GREEN });
@@ -188,7 +188,7 @@ async function buildReceiptPdf(o: {
 
 // ── Email (formato ufficiale Proxima Funded) ───────────────────────────────
 function buildEmailHtml(p: {
-  firstName: string; receiptNo: string; date: string; orderId: string; trackId: string;
+  firstName: string; receiptNo: string; date: string; orderId: string; trackId: string; methodShort: string;
   lines: Array<{ label: string; qty: number; total: number }>; total: number; dashboardUrl: string;
 }): string {
   const rows = p.lines.map((l) => `
@@ -254,7 +254,7 @@ function buildEmailHtml(p: {
                               <tr><td style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:12.5px;color:rgba(220,228,240,0.6)">Date</td><td align="right" style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:12.5px;font-weight:700;color:#FFFFFF">${p.date}</td></tr>
                               <tr><td style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:12.5px;color:rgba(220,228,240,0.6)">Order ID</td><td align="right" style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:11.5px;font-weight:700;color:#F0CEA4">${p.orderId}</td></tr>
                               ${p.trackId ? `<tr><td style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:12.5px;color:rgba(220,228,240,0.6)">Track ID</td><td align="right" style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:12.5px;font-weight:700;color:#FFFFFF">${p.trackId}</td></tr>` : ''}
-                              <tr><td style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:12.5px;color:rgba(220,228,240,0.6)">Method</td><td align="right" style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:12.5px;font-weight:700;color:#FFFFFF">Cryptocurrency</td></tr>
+                              <tr><td style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:12.5px;color:rgba(220,228,240,0.6)">Method</td><td align="right" style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:12.5px;font-weight:700;color:#FFFFFF">${p.methodShort}</td></tr>
                               <tr><td style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:12.5px;color:rgba(220,228,240,0.6)">Status</td><td align="right" style="padding:6px 0;font-family:'Montserrat',Arial,sans-serif;font-size:12.5px;font-weight:800;color:#34D399">PAID</td></tr>
                             </tbody>
                           </table>
@@ -323,6 +323,9 @@ serve(async (req: Request) => {
   const receiptNo = o.receipt_no || `PF-${new Date().getFullYear()}-${String(o.receipt_seq).padStart(4, '0')}`;
   const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Europe/Rome' });
   const trackId = String(b.track_id ?? o.track_id ?? '');
+  const method = (b.method ?? o.payment_method) === 'card' ? 'card' : 'crypto';
+  const methodLabel = method === 'card' ? 'Card payment — processed by Stripe' : 'Cryptocurrency — processed by OxaPay';
+  const methodShort = method === 'card' ? 'Card payment' : 'Cryptocurrency';
 
   const items = (o.items || {}) as Record<string, number>;
   const lines: Array<{ label: string; qty: number; unit: number; total: number }> = [];
@@ -338,7 +341,7 @@ serve(async (req: Request) => {
   try {
     pdfB64 = await buildReceiptPdf({
       receiptNo, date: dateStr, name: o.name || '', email: o.email || '', phone: o.phone || '',
-      address: o.address || '', orderId, trackId, lines, total,
+      address: o.address || '', orderId, trackId, methodLabel, lines, total,
     });
   } catch (e: any) {
     return json({ error: 'pdf_failed', detail: e?.message || String(e) }, 500);
@@ -346,7 +349,7 @@ serve(async (req: Request) => {
 
   // Email con allegato: ZeptoMail (mittente proximafunded.com) se configurato, altrimenti Resend
   if (!o.email) return json({ error: 'client_email_missing' }, 400);
-  const html = buildEmailHtml({ firstName, receiptNo, date: dateStr, orderId, trackId, lines, total, dashboardUrl: DASHBOARD_URL });
+  const html = buildEmailHtml({ firstName, receiptNo, date: dateStr, orderId, trackId, methodShort, lines, total, dashboardUrl: DASHBOARD_URL });
   const text = buildEmailText({ firstName, receiptNo, total, orderId, dashboardUrl: DASHBOARD_URL });
   const subject = `Payment Received — Receipt ${receiptNo} | Proxima Funded`;
   let mailId: string | undefined;
@@ -406,6 +409,7 @@ serve(async (req: Request) => {
     track_id: trackId || o.track_id,
     paid_amount: b.paid_amount != null ? Number(b.paid_amount) : total,
     paid_currency: b.currency ?? 'USD',
+    payment_method: method,
     paid_at: now,
     email_sent_at: now,
   }).eq('order_id', orderId);
