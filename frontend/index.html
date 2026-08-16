@@ -399,6 +399,31 @@ select.fil option{background:var(--navy2)}
       </div>
     </div>
 
+    <!-- CLIENTE: PROXIMA PAGAMENTI (archivio ricevute challenge) -->
+    <div class="pg" id="pg-ric">
+      <div class="pg-h">
+        <div class="pg-t">Proxima Pagamenti</div>
+        <div class="pg-s">Le ricevute dei tuoi acquisti challenge Proxima Funded. Puoi scaricare il PDF ufficiale di ogni pagamento.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden">
+        <div style="max-height:65vh;overflow-y:auto;overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="background:#0F1E35;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;z-index:1">
+                <th style="text-align:left;padding:12px 16px;font-size:11px;color:var(--gray);font-weight:500;text-transform:uppercase;letter-spacing:.5px">Ricevuta</th>
+                <th style="text-align:left;padding:12px 16px;font-size:11px;color:var(--gray);font-weight:500;text-transform:uppercase;letter-spacing:.5px">Data</th>
+                <th style="text-align:left;padding:12px 16px;font-size:11px;color:var(--gray);font-weight:500;text-transform:uppercase;letter-spacing:.5px">Acquisto</th>
+                <th style="text-align:left;padding:12px 16px;font-size:11px;color:var(--gray);font-weight:500;text-transform:uppercase;letter-spacing:.5px">Metodo</th>
+                <th style="text-align:right;padding:12px 16px;font-size:11px;color:var(--gray);font-weight:500;text-transform:uppercase;letter-spacing:.5px">Importo</th>
+                <th style="text-align:right;padding:12px 16px;font-size:11px;color:var(--gray);font-weight:500;text-transform:uppercase;letter-spacing:.5px">PDF</th>
+              </tr>
+            </thead>
+            <tbody id="ric-tbody"><tr><td colspan="6" style="padding:30px;text-align:center;color:var(--gray)">Caricamento…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- CLIENTE: CREDENZIALI MT5 (auto-provisioning MetaApi) -->
     <div class="pg" id="pg-cm5">
       <div class="pg-h">
@@ -813,6 +838,18 @@ select.fil option{background:var(--navy2)}
     </div>
 
     <!-- ADMIN: UTENTI INTERNI -->
+    <!-- ADMIN: VISTA CLIENTE (apre la dashboard come la vede il cliente) -->
+    <div class="pg" id="pg-vc">
+      <div class="pg-h">
+        <div class="pg-t">Vista Cliente</div>
+        <div class="pg-s">Apri la dashboard esattamente come la vede il cliente, per assistenza e verifica. La gestione anagrafica è nel Gestionale, l'operatività nell'Arbitrage Manager.</div>
+      </div>
+      <div style="margin-bottom:16px;max-width:420px">
+        <input id="vc-search" oninput="renderVistaCliente()" placeholder="Cerca per nome, email o ID…" style="width:100%;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-family:inherit;font-size:14px">
+      </div>
+      <div id="vc-list" style="display:flex;flex-direction:column;gap:8px"><div style="padding:30px;text-align:center;color:var(--gray)">Caricamento clienti…</div></div>
+    </div>
+
     <div class="pg" id="pg-ui">
       <div class="pg-h" style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap">
         <div style="flex:1;min-width:260px">
@@ -2081,11 +2118,11 @@ async function loginA(){
     btn.textContent='Accedi →';btn.disabled=false;
   }
 }
-function go(u,r){CU=u;document.getElementById('auth').style.display='none';document.getElementById('app').style.display='block';document.getElementById('sn').textContent=u.name;document.getElementById('sr').textContent=r==='admin'?'Amministratore':'Cliente';buildNav(r);if(r==='client'){renderAbbonamentiTabs();fillC(u);sp('pg-pan');}else{fillA();sp('pg-ad');}}
+function go(u,r){CU=u;document.getElementById('auth').style.display='none';document.getElementById('app').style.display='block';document.getElementById('sn').textContent=u.name;document.getElementById('sr').textContent=r==='admin'?'Amministratore':'Cliente';buildNav(r);if(r==='client'){renderAbbonamentiTabs();fillC(u);sp('pg-pan');}else{sp('pg-vc');}}
 function logout(){try{sessionStorage.removeItem('loop_sess');}catch(_){ }CU=null;API_TOKEN=null;USER_ROLE=null;ADMIN_USER=null;CURRENT_CLIENT_PROFILE=null;CURRENT_ABBONAMENTO_IDX=0;if(chCum&&chCum.destroy){chCum.destroy();chCum=null;}if(chCic&&chCic.destroy){chCic.destroy();chCic=null;}hideAdminViewingBanner();document.getElementById('auth').style.display='flex';document.getElementById('app').style.display='none';}
 const NAV_ICONS={'pg-pan':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="1" opacity=".9"/><rect x="14" y="3" width="7" height="7" rx="1" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1" opacity=".7"/></svg>','pg-op':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>','pg-st':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>','pg-pf':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>','pg-mov':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="14" width="4" height="8" rx="1" opacity=".5"/><rect x="9" y="9" width="4" height="13" rx="1" opacity=".7"/><rect x="16" y="4" width="4" height="18" rx="1" opacity=".9"/></svg>','pg-ad':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="1" opacity=".9"/><rect x="14" y="3" width="7" height="7" rx="1" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1" opacity=".7"/></svg>','pg-gc':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v1h20v-1c0-3.3-6.7-5-10-5z" opacity=".9"/></svg>','pg-agr':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>','pg-na':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z" opacity=".7"/><path d="M19 8v6M16 11h6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>','pg-an':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="14" width="4" height="8" rx="1" opacity=".5"/><rect x="9" y="9" width="4" height="13" rx="1" opacity=".7"/><rect x="16" y="4" width="4" height="18" rx="1" opacity=".9"/></svg>','pg-bro':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>','pg-ui':'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L3 7v6c0 5 3.9 9.7 9 11 5.1-1.3 9-6 9-11V7l-9-5z" opacity=".9"/></svg>','pg-log':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'};
-const CN=[{id:'pg-pan',i:'dashboard',l:'Panoramica'},{id:'pg-op',i:'bolt',l:'Operazione Corrente'},{id:'pg-st',i:'clock',l:'Storico Operazioni'},{id:'pg-pf',i:'trend',l:'Performance & Proiezioni'},{id:'pg-mov',i:'money',l:'Movimenti Broker'},{id:'pg-cm5',i:'key',l:'Credenziali MT5'},{id:'act-buy-challenge',i:'cart',l:'Acquista nuova challenge',action:'openProximaCheckout()',external:true,sectionBefore:'Prop firm'}];
-const AN=[{id:'pg-ad',i:'dashboard',l:'Dashboard Globale'},{id:'pg-gc',i:'users',l:'Gestione Clienti'},{id:'pg-agr',i:'identification',l:'Anagrafica'},{id:'pg-an',i:'bar',l:'Analytics Globali'},{id:'pg-bro',i:'money',l:'Operazioni Broker'},{id:'pg-ui',i:'shield',l:'Utenti Interni'},{id:'pg-log',i:'search',l:'Log Accessi'},{id:'act-wipe',i:'trash',l:'Reset stato zero',action:'wipeTestDataConfirm()',danger:true,sectionBefore:'DEV / Test'}];
+const CN=[{id:'pg-pan',i:'dashboard',l:'Panoramica'},{id:'pg-op',i:'bolt',l:'Operazione Corrente'},{id:'pg-st',i:'clock',l:'Storico Operazioni'},{id:'pg-pf',i:'trend',l:'Performance & Proiezioni'},{id:'pg-mov',i:'money',l:'Movimenti Broker'},{id:'pg-cm5',i:'key',l:'Credenziali MT5'},{id:'act-buy-challenge',i:'cart',l:'Acquista nuova challenge',action:'openProximaCheckout()',external:true,sectionBefore:'Prop firm'},{id:'pg-ric',i:'money',l:'Proxima Pagamenti'}];
+const AN=[{id:'pg-vc',i:'users',l:'Vista Cliente'},{id:'pg-ui',i:'shield',l:'Utenti Interni'},{id:'pg-log',i:'search',l:'Log Accessi'}];
 function buildNav(r){
   const nav=document.getElementById('snav');
   const items=r==='client'?CN:AN;
@@ -2108,7 +2145,7 @@ function buildNav(r){
   });
   nav.innerHTML = html;
 }
-function sp(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));const pg=document.getElementById(id);if(pg)pg.classList.add('on');const ni=document.getElementById('ni-'+id);if(ni)ni.classList.add('on');if(id==='pg-pf')initCC();if(id==='pg-ad'){initAdD();fillA();}if(id==='pg-an')initAdA();if(id==='pg-agr')renderAgrGrid();if(id==='pg-gc')fillA();if(id==='pg-na'){const _nt=document.getElementById('ntab-dati');if(_nt)switchNewTab('dati',_nt);if(typeof updateNewPreview==='function')updateNewPreview();}if(id==='pg-ui')loadInternalUsers();if(id==='pg-log')loadLoginLog();if(id==='pg-bro')initBrokerLivePage();if(id==='pg-mov')initClientMovPage();if(id==='pg-cm5')renderCredMT5Page();}
+function sp(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));const pg=document.getElementById(id);if(pg)pg.classList.add('on');const ni=document.getElementById('ni-'+id);if(ni)ni.classList.add('on');if(id==='pg-pf')initCC();if(id==='pg-ad'){initAdD();fillA();}if(id==='pg-an')initAdA();if(id==='pg-agr')renderAgrGrid();if(id==='pg-gc')fillA();if(id==='pg-na'){const _nt=document.getElementById('ntab-dati');if(_nt)switchNewTab('dati',_nt);if(typeof updateNewPreview==='function')updateNewPreview();}if(id==='pg-ui')loadInternalUsers();if(id==='pg-log')loadLoginLog();if(id==='pg-bro')initBrokerLivePage();if(id==='pg-mov')initClientMovPage();if(id==='pg-cm5')renderCredMT5Page();if(id==='pg-ric')initRicevutePage();if(id==='pg-vc')initVistaCliente();}
 /* ═══════════════════════════════════════════════════════
    ICON LIBRARY - Heroicons v2 solid (MIT license)
    SVG monocromatici, solid bold, usano currentColor.
@@ -3683,6 +3720,39 @@ const PROXIMA_CHECKOUT_URL = 'https://checkout.proximafunded.com';
   }
 })();
 
+// ── Proxima Pagamenti: archivio ricevute del cliente ──
+async function initRicevutePage(){
+  const tb = document.getElementById('ric-tbody');
+  tb.innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--gray)">Caricamento…</td></tr>';
+  try{
+    const r = await fetch(API_BASE + '/receipts', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + API_TOKEN }, body: JSON.stringify({ action:'list' }) });
+    const d = await r.json();
+    if(!d.ok) throw new Error(d.error || 'errore');
+    const rows = d.receipts || [];
+    if(rows.length === 0){ tb.innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--gray)">Nessuna ricevuta ancora: qui compariranno i tuoi acquisti challenge.</td></tr>'; return; }
+    const itemsLabel = (it) => { const p=[]; if(it && it.k50) p.push(it.k50+'x 50K Challenge'); if(it && it.k100) p.push(it.k100+'x 100K Challenge'); return p.join(' + ') || '—'; };
+    const td = 'padding:12px 16px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.05)';
+    tb.innerHTML = rows.map(x => '<tr>'
+      + '<td style="'+td+';font-weight:600;color:#E8B56C">'+(x.receipt_no||'—')+'</td>'
+      + '<td style="'+td+'">'+(x.paid_at ? new Date(x.paid_at).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—')+'</td>'
+      + '<td style="'+td+'">'+itemsLabel(x.items)+'</td>'
+      + '<td style="'+td+'">'+(x.payment_method==='card' ? '💳 Carta' : '🪙 Crypto')+'</td>'
+      + '<td style="'+td+';text-align:right;font-weight:600">$'+Number(x.amount||0).toFixed(2)+'</td>'
+      + '<td style="'+td+';text-align:right">'+(x.receipt_path ? '<button class="btn-s" style="padding:6px 14px;font-size:12px" onclick="downloadRicevuta(\''+x.order_id+'\')">⬇ Scarica</button>' : '<span style="color:var(--gray);font-size:12px">—</span>')+'</td>'
+      + '</tr>').join('');
+  }catch(err){
+    tb.innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:#f87171">Errore nel caricamento delle ricevute. Riprova.</td></tr>';
+  }
+}
+async function downloadRicevuta(orderId){
+  try{
+    const r = await fetch(API_BASE + '/receipts', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + API_TOKEN }, body: JSON.stringify({ action:'download', order_id: orderId }) });
+    const d = await r.json();
+    if(d.ok && d.url) window.open(d.url, '_blank');
+    else alert('Ricevuta non disponibile al momento. Riprova tra poco.');
+  }catch(_){ alert('Errore di rete nel download.'); }
+}
+
 async function openProximaCheckout(){
   try{
     const r = await fetch(API_BASE + '/checkout-link', {
@@ -3702,6 +3772,9 @@ async function openProximaCheckout(){
 // 2) prompt() in cui l'utente deve digitare ESATTAMENTE "RESET" per procedere.
 // 3) Chiama api.wipeTestData(), poi refreshFromApi() e mostra il riepilogo.
 async function wipeTestDataConfirm(){
+  alert('⛔ Funzione disattivata: il reset della sola dashboard disallineerebbe gestionale, vault e tutorial.');
+  return;
+
   // Solo admin (UI hint; il backend rifiuta comunque non-admin)
   if(USER_ROLE !== 'admin'){
     alert('Operazione riservata agli admin.');
@@ -5532,6 +5605,28 @@ async function viewClient(id){
   } catch(err) {
     alert('❌ Impossibile caricare il dashboard di '+c.n+' da Supabase:\n\n' + err.message);
   }
+}
+
+// ── Vista Cliente: unica porta admin verso la dashboard del cliente ──
+async function initVistaCliente(){
+  const el = document.getElementById('vc-list');
+  el.innerHTML = '<div style="padding:30px;text-align:center;color:var(--gray)">Caricamento clienti…</div>';
+  const ok = await loadClientsFromApi();
+  if(!ok && AC.length === 0){ el.innerHTML = '<div style="padding:30px;text-align:center;color:#f87171">Impossibile caricare i clienti da Supabase.</div>'; return; }
+  renderVistaCliente();
+}
+function renderVistaCliente(){
+  const el = document.getElementById('vc-list');
+  const q = (document.getElementById('vc-search')?.value || '').toLowerCase();
+  const list = AC.filter(c => !q || (c.n||'').toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.id||'').toLowerCase().includes(q));
+  if(list.length === 0){ el.innerHTML = '<div style="padding:30px;text-align:center;color:var(--gray)">Nessun cliente trovato.</div>'; return; }
+  el.innerHTML = list.map(c => '<div class="cr" style="align-items:center">'
+    + '<div class="cav">'+(c.n||'?').split(' ').map(x=>x[0]).join('')+'</div>'
+    + '<div style="flex:1"><div style="font-size:14px;font-weight:500">'+(c.n||'—')+'</div><div style="font-size:11px;color:var(--gray)">'+(c.email||'')+' · '+c.id+'</div></div>'
+    + '<div class="badge d'+Math.min(c.g||1,4)+' mono" style="margin-right:10px">G'+(c.g||1)+'</div>'
+    + (c.s==='sospeso' ? '<span class="badge bgr" style="margin-right:10px">Sospeso</span>' : '')
+    + '<button class="btn-a" style="padding:8px 16px;font-size:13px" onclick="viewClient(\''+c.id+'\')">👁 Vedi come cliente</button>'
+    + '</div>').join('');
 }
 
 function showAdminViewingBanner(clientName) {

@@ -347,6 +347,15 @@ serve(async (req: Request) => {
     return json({ error: 'pdf_failed', detail: e?.message || String(e) }, 500);
   }
 
+  // Archivio: salva il PDF nel bucket privato 'receipts' (stessa copia inviata al cliente)
+  let receiptPath: string | null = o.receipt_path ?? null;
+  try {
+    const bytes = Uint8Array.from(atob(pdfB64), (c) => c.charCodeAt(0));
+    const path = `${receiptNo}.pdf`;
+    const { error: upErr } = await sb.storage.from('receipts').upload(path, bytes, { contentType: 'application/pdf', upsert: true });
+    if (!upErr) receiptPath = path;
+  } catch (_e) { /* l'archiviazione non blocca l'invio */ }
+
   // Email con allegato: ZeptoMail (mittente proximafunded.com) se configurato, altrimenti Resend
   if (!o.email) return json({ error: 'client_email_missing' }, 400);
   const html = buildEmailHtml({ firstName, receiptNo, date: dateStr, orderId, trackId, methodShort, lines, total, dashboardUrl: DASHBOARD_URL });
@@ -410,6 +419,7 @@ serve(async (req: Request) => {
     paid_amount: b.paid_amount != null ? Number(b.paid_amount) : total,
     paid_currency: b.currency ?? 'USD',
     payment_method: method,
+    receipt_path: receiptPath,
     paid_at: now,
     email_sent_at: now,
   }).eq('order_id', orderId);
