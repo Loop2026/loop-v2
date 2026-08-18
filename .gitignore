@@ -61,3 +61,6 @@ tmp/
 
 # Generated files
 *.tsbuildinfo
+
+# Local Netlify folder
+.netlify

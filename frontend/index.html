@@ -1508,7 +1508,7 @@ const api = {
       if(now.getDate() >= d0.getDate()) m += 1;
       return Math.max(0, m);
     };
-    let piano, capitale, cicliMese, giorno, dataInizio, mesiTot, mesiAttivi;
+    let piano, capitale, cicliMese, giorno, dataInizio, mesiTot, mesiAttivi, capitaleAttivato, cicliMeseAttivato;
     if(selected){
       piano = selected.piano || null;
       capitale = selected.capitale_broker || selected.capitale_prop || 0;
@@ -1520,6 +1520,10 @@ const api = {
       // nessuno slot ancora collegato/attivo), data_inizio è solo la data di creazione
       // dell'abbonamento, non un vero inizio di trading → Mesi Attivi deve restare a 0.
       mesiAttivi = selected.ultimo_ciclo ? Math.min(_monthsBetween(dataInizio), mesiTot) : 0;
+      // Vista singolo abbonamento: la proiezione resta quella del piano selezionato,
+      // indipendentemente dall'attivazione (è la previsione per QUEL conto).
+      capitaleAttivato = capitale;
+      cicliMeseAttivato = cicliMese;
     } else {
       // AGGREGATO: somma capitale_broker, somma cicli_mese; piano = riassunto
       const attivi = abbList.filter(a => (a.stato || 'attivo') !== 'chiuso');
@@ -1548,6 +1552,13 @@ const api = {
       // chiuso un ciclo reale — altrimenti (tutti in attesa del primo trade) resta 0.
       const hasRealActivity = abbList.some(a => a && a.ultimo_ciclo);
       mesiAttivi = hasRealActivity ? Math.min(_monthsBetween(dataInizio), mesiTot) : 0;
+      // V2 (2026-08-18 fix): la "Proiezione a termine servizio" deve sommare SOLO gli
+      // abbonamenti già attivati (che hanno chiuso almeno un ciclo reale, ultimo_ciclo
+      // non nullo). Sommare anche gli abbonamenti mai partiti gonfia cicli/capitale e
+      // sfalsa profitto stimato, cicli previsti e ROI proiettato.
+      const attivati = abbList.filter(a => a && a.ultimo_ciclo);
+      capitaleAttivato = attivati.reduce((s,a) => s + (parseFloat(a.capitale_broker||a.capitale_prop||0)||0), 0);
+      cicliMeseAttivato = attivati.reduce((s,a) => s + (parseInt(a.cicli_mese||15,10)||0), 0);
     }
 
     return {
@@ -1557,6 +1568,10 @@ const api = {
         piano: piano,
         capitale: capitale,
         cicliMese: cicliMese,
+        // V2 (2026-08-18): capitale/cicliMese limitati ai soli abbonamenti già attivati
+        // (usati SOLO dalla card "Proiezione a termine servizio" per non sfalsare i dati).
+        capitaleAttivato: capitaleAttivato,
+        cicliMeseAttivato: cicliMeseAttivato,
         // V2 (2026-04-19): data_inizio (selected o più vecchio in aggregato)
         // Fonte di verità per le label dei mesi in Performance & Proiezioni.
         dataInizio: dataInizio,
@@ -1891,6 +1906,9 @@ function mapDashboardToUser(dash, email) {
     clientId: c.id,  // id cliente Supabase (es. C001) - necessario per api.getTrades
     piano: c.piano, capitale: c.capitale,
     cicliMese: c.cicliMese, mesiAttivi: kpi.mesiAttivi, mesiTot: kpi.mesiTot,
+    // V2 (2026-08-18): per la card "Proiezione a termine servizio" — solo abbonamenti attivati
+    capitaleAttivato: (typeof c.capitaleAttivato === 'number') ? c.capitaleAttivato : c.capitale,
+    cicliMeseAttivato: (typeof c.cicliMeseAttivato === 'number') ? c.cicliMeseAttivato : c.cicliMese,
     profTot: kpi.profittoTotale, cicliTot: kpi.cicliCompletati,
     burned: kpi.challengeBruciate, rimborsi: kpi.rimborsiRicevuti,
     g: dash.cicloAttuale.giorno,
@@ -2330,10 +2348,15 @@ function fillC(u){
   document.getElementById('km').textContent=fmtInt(u.mesiAttivi);
   document.getElementById('kms').textContent='su '+u.mesiTot+' totali';
   document.getElementById('kro').textContent=(u.capitale>0?Math.round(u.profTot/u.capitale*100):0)+'%';
-  const m=274*u.cicliMese,t=m*u.mesiTot;
+  // V2 (2026-08-18 fix): la proiezione somma solo i cicli/capitale degli abbonamenti
+  // GIA' attivati (almeno un ciclo reale chiuso) — altrimenti in modalità aggregata
+  // gli abbonamenti mai partiti gonfiano artificialmente profitto e cicli previsti.
+  const cicliMeseProj = (typeof u.cicliMeseAttivato === 'number') ? u.cicliMeseAttivato : u.cicliMese;
+  const capitaleProj = (typeof u.capitaleAttivato === 'number') ? u.capitaleAttivato : u.capitale;
+  const m=274*cicliMeseProj,t=m*u.mesiTot;
   document.getElementById('pjp').textContent='$'+fmtMoney(t);
-  document.getElementById('pjc').textContent=fmtInt(u.cicliMese*u.mesiTot);
-  document.getElementById('pjr').textContent=Math.round(t/u.capitale*100)+'%';
+  document.getElementById('pjc').textContent=fmtInt(cicliMeseProj*u.mesiTot);
+  document.getElementById('pjr').textContent=(capitaleProj>0 ? Math.round(t/capitaleProj*100) : 0)+'%';
   document.getElementById('pjpl').textContent=u.mesiAttivi+' / '+u.mesiTot+' mesi';
   document.getElementById('pjpb').style.width=Math.round(u.mesiAttivi/u.mesiTot*100)+'%';
   // V2 (2026-04-18 sera): Stato Ciclo multi-abbonamento.
