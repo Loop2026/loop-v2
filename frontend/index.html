@@ -2258,7 +2258,7 @@ function renderIMieiConti(){
     const piano = a.piano || '—';
     const cap = fmtCap(a.capitale_broker || a.capitale_prop);
     const inizio = fmtDate(a.data_inizio);
-    const scad = fmtDate(a.data_scadenza);
+    const scad = fmtDate(a.data_scadenza || a.data_scad);
     const alias = a.alias ? escHtml(a.alias) : '<span style="color:var(--gray)">—</span>';
     return '<tr>'
       + '<td class="mono" style="color:var(--gray)">'+code+'</td>'
