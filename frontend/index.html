@@ -1516,7 +1516,10 @@ const api = {
       giorno = selected.giorno_ciclo || 1;
       dataInizio = selected.data_inizio || null;
       mesiTot = mesiMap[piano] || 12;
-      mesiAttivi = Math.min(_monthsBetween(dataInizio), mesiTot);
+      // V2: finché l'abbonamento non ha mai chiuso un ciclo reale (ultimo_ciclo nullo,
+      // nessuno slot ancora collegato/attivo), data_inizio è solo la data di creazione
+      // dell'abbonamento, non un vero inizio di trading → Mesi Attivi deve restare a 0.
+      mesiAttivi = selected.ultimo_ciclo ? Math.min(_monthsBetween(dataInizio), mesiTot) : 0;
     } else {
       // AGGREGATO: somma capitale_broker, somma cicli_mese; piano = riassunto
       const attivi = abbList.filter(a => (a.stato || 'attivo') !== 'chiuso');
@@ -1541,7 +1544,10 @@ const api = {
       // mesiTot aggregato = max(durata piano) tra gli attivi, fallback 12
       const durate = (attivi.length ? attivi : abbList).map(a => mesiMap[a && a.piano] || 0).filter(n => n > 0);
       mesiTot = durate.length ? Math.max.apply(null, durate) : 12;
-      mesiAttivi = Math.min(_monthsBetween(dataInizio), mesiTot);
+      // V2: come sopra, conta solo se almeno un abbonamento del cliente ha davvero
+      // chiuso un ciclo reale — altrimenti (tutti in attesa del primo trade) resta 0.
+      const hasRealActivity = abbList.some(a => a && a.ultimo_ciclo);
+      mesiAttivi = hasRealActivity ? Math.min(_monthsBetween(dataInizio), mesiTot) : 0;
     }
 
     return {
