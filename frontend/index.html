@@ -2263,7 +2263,9 @@ function renderIMieiConti(){
     const code = 'A' + (a.ordine || (i+1));
     const piano = a.piano || '—';
     const cap = fmtCap(a.capitale_broker || a.capitale_prop);
-    const inizio = fmtDate(a.data_inizio);
+    // Finché non è mai stato chiuso un ciclo reale (ultimo_ciclo nullo), data_inizio è solo
+    // la data di creazione dell'abbonamento, non un vero inizio di trading: mostriamo "—".
+    const inizio = a.ultimo_ciclo ? fmtDate(a.data_inizio) : '<span style="color:var(--gray)">— (in attesa 1ª operazione)</span>';
     const scad = fmtDate(a.data_scadenza || a.data_scad);
     const alias = a.alias ? escHtml(a.alias) : '<span style="color:var(--gray)">—</span>';
     return '<tr>'
@@ -3216,7 +3218,7 @@ async function renderAbbonamentiInModal(clientId){
          +       '</div>'
          +       aliasHtml
          +       '<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--gray);margin-top:6px">'
-         +         '<span>Inizio: <strong style="color:rgba(255,255,255,.85)">'+fmtDateIt(a.data_inizio)+'</strong></span>'
+         +         '<span>Inizio: <strong style="color:rgba(255,255,255,.85)">'+(a.ultimo_ciclo ? fmtDateIt(a.data_inizio) : '— (in attesa 1ª operazione)')+'</strong></span>'
          +         '<span>Scadenza: <strong style="color:rgba(255,255,255,.85)">'+fmtDateIt(a.data_scad)+'</strong></span>'
          +         capHtml
          +       '</div>'
